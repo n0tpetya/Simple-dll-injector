@@ -3,7 +3,7 @@
 
 BOOL InjectDLL(DWORD processId, LPCWSTR dllPath)
 {
-    // Öffnen des Prozesses mit den nötigen Berechtigungen
+
     HANDLE hProcess = OpenProcess(PROCESS_ALL_ACCESS, FALSE, processId);
     if (hProcess == NULL)
     {
@@ -11,7 +11,6 @@ BOOL InjectDLL(DWORD processId, LPCWSTR dllPath)
         return FALSE;
     }
 
-    // Reservieren des Speichers im Zielprozess
     LPVOID dllPathAddress = VirtualAllocEx(hProcess, NULL, (wcslen(dllPath) + 1) * sizeof(WCHAR), MEM_COMMIT, PAGE_READWRITE);
     if (dllPathAddress == NULL)
     {
@@ -20,7 +19,6 @@ BOOL InjectDLL(DWORD processId, LPCWSTR dllPath)
         return FALSE;
     }
 
-    // Schreiben des Pfads der DLL in den Zielprozess
     if (!WriteProcessMemory(hProcess, dllPathAddress, dllPath, (wcslen(dllPath) + 1) * sizeof(WCHAR), NULL))
     {
         std::cout << "Failed to write DLL path to target process memory. Error code: " << GetLastError() << std::endl;
@@ -29,7 +27,7 @@ BOOL InjectDLL(DWORD processId, LPCWSTR dllPath)
         return FALSE;
     }
 
-    // Finden der Adresse von LoadLibraryW in kernel32.dll
+    // find adress of LoadLibraryW in kernel32.dll
     LPTHREAD_START_ROUTINE loadLibraryAddr = (LPTHREAD_START_ROUTINE)GetProcAddress(GetModuleHandle(L"kernel32.dll"), "LoadLibraryW");
     if (loadLibraryAddr == NULL)
     {
@@ -39,7 +37,6 @@ BOOL InjectDLL(DWORD processId, LPCWSTR dllPath)
         return FALSE;
     }
 
-    // Erstellen des Remote-Threads im Zielprozess, um die DLL zu laden
     HANDLE hThread = CreateRemoteThread(hProcess, NULL, 0, loadLibraryAddr, dllPathAddress, 0, NULL);
     if (hThread == NULL)
     {
@@ -65,7 +62,7 @@ int main()
     std::cout << "Enter the process ID: ";
     std::cin >> processId;
 
-    LPCWSTR dllPath = L"C:\\Users\\P3tya\\source\\repos\\Dll_inj\\x64\\Debug\\Dllsot.dll"; // DLL path
+    LPCWSTR dllPath = L""; // your DLL path
 
     if (InjectDLL(processId, dllPath))
     {
